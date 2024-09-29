@@ -1,3 +1,893 @@
+// import React, { useRef, useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate } from 'react-router-dom';
+// import ReactMarkdown from 'react-markdown';
+// import { gsap } from 'gsap';
+// import './LandingPage.css';
+// import logo from '../assets/logo.png';
+// import Uploadbutton from '../components/Uploadbutton';
+// import supabase from '../supabaseClient';
+
+// const API_BASE_URL = 'http://localhost:8000/api';
+
+
+// const LegalLensPage = () => {
+//   const [query, setQuery] = useState('');
+//   const [response, setResponse] = useState('');
+//   const [displayedQuery, setDisplayedQuery] = useState('');
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [hasQueried, setHasQueried] = useState(false);
+//   const [history, setHistory] = useState([]);
+//   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+//   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
+//   const [currentChatId, setCurrentChatId] = useState(null);
+//   const [userEmail, setUserEmail] = useState(null);
+
+//   const navigate = useNavigate();
+
+//   const logoItem = useRef(null);
+//   const logoText = useRef(null);
+//   const logoTag = useRef(null);
+//   const [uploadedFile, setUploadedFile] = useState(null);
+//   const ensureUserTable = async (email) => {
+//     try {
+//       // This endpoint will create the table if it doesn't exist
+//       await axios.post(`${API_BASE_URL}/new_chat`, { user_email: email });
+//       console.log(`Ensured table exists for user: ${email}`);
+//     } catch (error) {
+//       console.error('Error ensuring user table exists:', error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     const checkUser = async () => {
+//       const { data: { user } } = await supabase.auth.getUser();
+//       if (user) {
+//         setUserEmail(user.email);
+//         await ensureUserTable(user.email);
+//       } else {
+//         navigate('/login'); // Redirect to login page if user is not authenticated
+//       }
+//     };
+
+//     checkUser();
+
+//     gsap.to(logoItem.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.2,
+//     });
+
+//     gsap.to(logoText.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.4,
+//     });
+
+//     gsap.to(logoTag.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.6,
+//     });
+
+//     // Set up Supabase auth listener
+//     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+//       if (event === 'SIGNED_IN') {
+//         setUserEmail(session.user.email);
+//         await ensureUserTable(session.user.email);
+//       } else if (event === 'SIGNED_OUT') {
+//         navigate('/login');
+//       }
+//     });
+
+//     // Cleanup function
+//     return () => {
+//       authListener.subscription.unsubscribe();
+//     };
+//   }, [navigate]);
+
+//   const handleQueryChange = (e) => {
+//     setQuery(e.target.value);
+//   };
+
+//   const handleSendQuery = async () => {
+//     if (!query || !userEmail) return;
+
+//     setIsLoading(true);
+//     setResponse('');
+//     setDisplayedQuery(query);
+//     setHasQueried(true);
+
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/query`, {
+//         user_email: userEmail,
+//         query: query,
+//         chat_id: currentChatId
+//       });
+
+//       setResponse(res.data.response);
+//       setCurrentChatId(res.data.chat_id);
+
+//       // Update history
+//       setHistory(prevHistory => [{ query, response: res.data.response }, ...prevHistory]);
+//     } catch (error) {
+//       console.error('Error processing request:', error);
+//       const errorMessage = 'Error processing request: ' + error.message;
+//       setResponse(errorMessage);
+//       setHistory(prevHistory => [{ query, response: errorMessage }, ...prevHistory]);
+//     } finally {
+//       setIsLoading(false);
+//       setQuery('');
+//     }
+//   };
+
+//   const toggleSidebar = () => {
+//     setIsSidebarOpen(!isSidebarOpen);
+//   };
+
+//   const toggleChatSidebar = () => {
+//     setIsChatSidebarOpen(!isChatSidebarOpen);
+//   };
+
+//   const handleNewChat = async () => {
+
+//     if (!userEmail) return;
+//     let chat_id
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/new_chat`, {
+//         user_email: userEmail,
+//       });
+//       // console.log(res.data.chat_id)
+//       chat_id=res.data.chat_id
+//       setCurrentChatId(res.data.chat_id);
+//       setQuery('');
+//       setResponse('');
+//       setDisplayedQuery('');
+//       setHasQueried(false);
+//       setHistory([]);
+//       navigate('/home')
+//     } catch (error) {
+//       console.error('Error creating new chat:', error);
+//     }
+//     return(chat_id)
+    
+//   };
+
+//   const handleFileUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (!file || !userEmail) return;
+//     let new_chat_id;
+//     if (!currentChatId) {
+//       new_chat_id=await handleNewChat();
+//     }
+
+//     setIsLoading(true);
+
+//     const formData = new FormData();
+//     formData.append('user_email', userEmail);
+//     formData.append('chat_id', currentChatId??new_chat_id);
+//     formData.append('file',file);
+
+//     try {
+//       const response = await axios.post(`${API_BASE_URL}/upload_file`, formData, {
+        
+//       });
+
+//       setUploadedFile(response.data.file_name);
+//       console.log('File uploaded:', response.data.file_name);
+//       setResponse(response.data.message);
+//       setHasQueried(true);
+//     } catch (error) {
+//       console.error('Error uploading file:', error);
+//       setResponse(`Error uploading file: ${error.message}`);
+//       setHasQueried(true);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const fetchChatHistory = async (chatId) => {
+//     if (!userEmail) return;
+
+//     try {
+//       const res = await axios.get(`${API_BASE_URL}/chat_history`, {
+//         params: {
+//           user_email: userEmail,
+//           chat_id: chatId,
+//         },
+//       });
+//       setHistory(res.data.history);
+//     } catch (error) {
+//       console.error('Error fetching chat history:', error);
+//     }
+//   };
+
+//   const handleLogout = async () => {
+//     await supabase.auth.signOut();
+//     navigate('/');
+//   };
+
+//   if (!userEmail) {
+//     return <div>Loading...</div>;
+//   }
+
+//   return (
+//     <div className="legal-lens-page">
+//       <main className="main-content">
+//         <button className="chat-toggle-button" onClick={toggleChatSidebar}>
+//           ☰
+//         </button>
+
+//         <button onClick={handleLogout} className="logout-button">Logout</button>
+
+//         {isChatSidebarOpen && (
+//           <div className="chat-sidebar">
+//             <div className="chat-sidebar-header">
+//               <button className="close-sidebar" onClick={toggleChatSidebar}>×</button>
+//             </div>
+//             <div className="chat-sidebar-content">
+//               <button className="new-chat-button" onClick={handleNewChat}>New Chat</button>
+//               {history.map((chat, index) => (
+//                 <div key={index} className="chat-item" onClick={() => fetchChatHistory(chat.chat_id)}>
+//                   {chat.chat_name}
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+//         )}
+
+//         {history.length > 0 && (
+//           <button className="toggle-sidebar" onClick={toggleSidebar}>
+//             {isSidebarOpen ? 'Hide History' : 'Show History'}
+//           </button>
+//         )}
+
+//         {isSidebarOpen && (
+//           <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+//             <div className="sidebar-header">
+//             </div>
+//             <div className="history-list">
+//               {/* {history.map((item, index) => (
+//                 <div key={index} className="history-item">
+//                   <strong>Query:</strong> {item.query}
+//                   <br />
+//                   <strong>Response:</strong> {item.response}
+//                 </div>
+//               ))} */}
+//             </div>
+//           </div>
+//         )}
+
+//         {hasQueried && (
+//           <div className="response-section">
+//             {isLoading ? (
+//               <div className="loading-indicator">Loading...</div>
+//             ) : (
+//               <div>
+//                 <h3>Query:</h3>
+//                 <p>{displayedQuery}</p>
+//                 <h3>Response:</h3>
+//                 <ReactMarkdown>{response}</ReactMarkdown>
+//               </div>
+//             )}
+//           </div>
+//         )}
+
+//         {!hasQueried && (
+//           <>
+//           <div className="icon-section">
+//             <img
+//               ref={logoItem}
+//               src={logo}
+//               alt="Legal Lens Icon"
+//               className="legal-lens-icon"
+//             />
+//           </div>
+//           <h1 ref={logoText} className="heading">
+//             Legal Lens
+//           </h1>
+//           <p ref={logoTag} className="tagline">
+//             Decoding Legal Jargon
+//           </p>
+//             <div className="action-buttons">
+//               <button className="action-button" onClick={() => setQuery("Summarize my contract")}>Summarize my contract</button>
+//               <button className="action-button" onClick={() => setQuery("Identify key clauses")}>Key clause identification</button>
+//               <button className="action-button" onClick={() => setQuery("Analyze legal documents")}>Analyze legal documents</button>
+//             </div>
+            
+//           </>
+//         )}
+
+//         <div className="query-section">
+//           <Uploadbutton fileHandler={handleFileUpload} />
+//           {/* {
+//             <div className="uploaded-file">
+//               <p>Uploaded: {uploadedFile}</p>
+//             </div>
+//           } */}
+//           <input
+//             type="text"
+//             placeholder="Ask me your queries..."
+//             className="query-input"
+//             value={query}
+//             onChange={handleQueryChange}
+//             onKeyDown={(e) => e.key === 'Enter' && handleSendQuery()}
+//           />
+//           <button onClick={handleSendQuery} className="send-button">Send</button>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default LegalLensPage;
+
+
+
+
+
+
+
+
+
+
+//                             jsx file for glass morphism sliding chat
+// import React, { useRef, useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate } from 'react-router-dom';
+// import ReactMarkdown from 'react-markdown';
+// import { gsap } from 'gsap';
+// import './LandingPage.css';
+// import logo from '../assets/logo.png';
+// import Uploadbutton from '../components/Uploadbutton';
+// import supabase from '../supabaseClient';
+
+// const API_BASE_URL = 'http://localhost:8000/api';
+
+// const LegalLensPage = () => {
+//   const [query, setQuery] = useState('');
+//   const [chatHistory, setChatHistory] = useState([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
+//   const [currentChatId, setCurrentChatId] = useState(null);
+//   const [userEmail, setUserEmail] = useState(null);
+//   const [uploadedFile, setUploadedFile] = useState(null);
+
+//   const navigate = useNavigate();
+//   const chatEndRef = useRef(null);
+
+//   const logoItem = useRef(null);
+//   const logoText = useRef(null);
+//   const logoTag = useRef(null);
+
+//   const ensureUserTable = async (email) => {
+//     try {
+//       await axios.post(`${API_BASE_URL}/new_chat`, { user_email: email });
+//       console.log(`Ensured table exists for user: ${email}`);
+//     } catch (error) {
+//       console.error('Error ensuring user table exists:', error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     const checkUser = async () => {
+//       const { data: { user } } = await supabase.auth.getUser();
+//       if (user) {
+//         setUserEmail(user.email);
+//         await ensureUserTable(user.email);
+//       } else {
+//         navigate('/login');
+//       }
+//     };
+
+//     checkUser();
+
+//     gsap.to(logoItem.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.2,
+//     });
+
+//     gsap.to(logoText.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.4,
+//     });
+
+//     gsap.to(logoTag.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.6,
+//     });
+
+//     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+//       if (event === 'SIGNED_IN') {
+//         setUserEmail(session.user.email);
+//         await ensureUserTable(session.user.email);
+//       } else if (event === 'SIGNED_OUT') {
+//         navigate('/login');
+//       }
+//     });
+
+//     return () => {
+//       authListener.subscription.unsubscribe();
+//     };
+//   }, [navigate]);
+
+//   useEffect(() => {
+//     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+//   }, [chatHistory]);
+
+//   const handleQueryChange = (e) => {
+//     setQuery(e.target.value);
+//   };
+
+//   const handleSendQuery = async () => {
+//     if (!query || !userEmail) return;
+
+//     setIsLoading(true);
+//     const newQuery = { type: 'query', content: query };
+//     setChatHistory(prev => [...prev, newQuery]);
+
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/query`, {
+//         user_email: userEmail,
+//         query: query,
+//         chat_id: currentChatId
+//       });
+
+//       const newResponse = { type: 'response', content: res.data.response };
+//       setChatHistory(prev => [...prev, newResponse]);
+//       setCurrentChatId(res.data.chat_id);
+//     } catch (error) {
+//       console.error('Error processing request:', error);
+//       const errorMessage = 'Error processing request: ' + error.message;
+//       const errorResponse = { type: 'response', content: errorMessage };
+//       setChatHistory(prev => [...prev, errorResponse]);
+//     } finally {
+//       setIsLoading(false);
+//       setQuery('');
+//     }
+//   };
+
+//   const toggleChatSidebar = () => {
+//     setIsChatSidebarOpen(!isChatSidebarOpen);
+//   };
+
+//   const handleNewChat = async () => {
+//     if (!userEmail) return;
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/new_chat`, {
+//         user_email: userEmail,
+//       });
+//       setCurrentChatId(res.data.chat_id);
+//       setQuery('');
+//       setChatHistory([]);
+//       navigate('/home');
+//     } catch (error) {
+//       console.error('Error creating new chat:', error);
+//     }
+//   };
+
+//   const handleFileUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (!file || !userEmail) return;
+//     let new_chat_id;
+//     if (!currentChatId) {
+//       new_chat_id = await handleNewChat();
+//     }
+
+//     setIsLoading(true);
+
+//     const formData = new FormData();
+//     formData.append('user_email', userEmail);
+//     formData.append('chat_id', currentChatId ?? new_chat_id);
+//     formData.append('file', file);
+
+//     try {
+//       const response = await axios.post(`${API_BASE_URL}/upload_file`, formData);
+
+//       setUploadedFile(response.data.file_name);
+//       console.log('File uploaded:', response.data.file_name);
+//       const uploadResponse = { type: 'response', content: response.data.message };
+//       setChatHistory(prev => [...prev, uploadResponse]);
+//     } catch (error) {
+//       console.error('Error uploading file:', error);
+//       const errorResponse = { type: 'response', content: `Error uploading file: ${error.message}` };
+//       setChatHistory(prev => [...prev, errorResponse]);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleLogout = async () => {
+//     await supabase.auth.signOut();
+//     navigate('/');
+//   };
+
+//   if (!userEmail) {
+//     return <div>Loading...</div>;
+//   }
+
+//   return (
+//     <div className="legal-lens-page">
+//       <main className="main-content">
+//         <button className="chat-toggle-button" onClick={toggleChatSidebar}>
+//           ☰
+//         </button>
+
+//         <button onClick={handleLogout} className="logout-button">Logout</button>
+
+//         {isChatSidebarOpen && (
+//           <div className="chat-sidebar">
+//             <div className="chat-sidebar-header">
+//               <button className="close-sidebar" onClick={toggleChatSidebar}>×</button>
+//             </div>
+//             <div className="chat-sidebar-content">
+//               <button className="new-chat-button" onClick={handleNewChat}>New Chat</button>
+//               {/* You can add chat history items here if needed */}
+//             </div>
+//           </div>
+//         )}
+
+//         <div className="chat-container">
+//           {chatHistory.length === 0 ? (
+//             <>
+//               <div className="icon-section">
+//                 <img
+//                   ref={logoItem}
+//                   src={logo}
+//                   alt="Legal Lens Icon"
+//                   className="legal-lens-icon"
+//                 />
+//               </div>
+//               <h1 ref={logoText} className="heading">
+//                 Legal Lens
+//               </h1>
+//               <p ref={logoTag} className="tagline">
+//                 Decoding Legal Jargon
+//               </p>
+//               <div className="action-buttons">
+//                 <button className="action-button" onClick={() => setQuery("Summarize my contract")}>Summarize my contract</button>
+//                 <button className="action-button" onClick={() => setQuery("Identify key clauses")}>Key clause identification</button>
+//                 <button className="action-button" onClick={() => setQuery("Analyze legal documents")}>Analyze legal documents</button>
+//               </div>
+//             </>
+//           ) : (
+//             chatHistory.map((item, index) => (
+//               <div key={index} className={`chat-item ${item.type}`}>
+//                 {item.type === 'query' ? (
+//                   <p><strong>Query:</strong> {item.content}</p>
+//                 ) : (
+//                   <ReactMarkdown>{item.content}</ReactMarkdown>
+//                 )}
+//               </div>
+//             ))
+//           )}
+//           {isLoading && <div className="loading-indicator">Loading...</div>}
+//           <div ref={chatEndRef} />
+//         </div>
+
+//         <div className="query-section">
+//           <Uploadbutton fileHandler={handleFileUpload} />
+//           <input
+//             type="text"
+//             placeholder="Ask me your queries..."
+//             className="query-input"
+//             value={query}
+//             onChange={handleQueryChange}
+//             onKeyDown={(e) => e.key === 'Enter' && handleSendQuery()}
+//           />
+//           <button onClick={handleSendQuery} className="send-button">Send</button>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default LegalLensPage;
+
+
+
+
+
+
+
+
+
+
+// import React, { useRef, useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate } from 'react-router-dom';
+// import ReactMarkdown from 'react-markdown';
+// import { gsap } from 'gsap';
+// import './LandingPage.css';
+// import logo from '../assets/logo.png';
+// import Uploadbutton from '../components/Uploadbutton';
+// import supabase from '../supabaseClient';
+
+// const API_BASE_URL = 'http://localhost:8000/api';
+
+// const LegalLensPage = () => {
+//   const [query, setQuery] = useState('');
+//   const [chatHistory, setChatHistory] = useState([]);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
+//   const [currentChatId, setCurrentChatId] = useState(null);
+//   const [userEmail, setUserEmail] = useState(null);
+//   const [uploadedFile, setUploadedFile] = useState(null);
+
+//   const navigate = useNavigate();
+//   const chatEndRef = useRef(null);
+//   const sidebarRef = useRef(null);
+
+//   const logoItem = useRef(null);
+//   const logoText = useRef(null);
+//   const logoTag = useRef(null);
+
+//   const ensureUserTable = async (email) => {
+//     try {
+//       await axios.post(`${API_BASE_URL}/new_chat`, { user_email: email });
+//       console.log(`Ensured table exists for user: ${email}`);
+//     } catch (error) {
+//       console.error('Error ensuring user table exists:', error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     const checkUser = async () => {
+//       const { data: { user } } = await supabase.auth.getUser();
+//       if (user) {
+//         setUserEmail(user.email);
+//         await ensureUserTable(user.email);
+//       } else {
+//         navigate('/login');
+//       }
+//     };
+
+//     checkUser();
+
+//     gsap.to(logoItem.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.2,
+//     });
+
+//     gsap.to(logoText.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.4,
+//     });
+
+//     gsap.to(logoTag.current, {
+//       opacity: 1,
+//       y: -20,
+//       duration: 2,
+//       ease: 'power3.out',
+//       delay: 0.6,
+//     });
+
+//     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+//       if (event === 'SIGNED_IN') {
+//         setUserEmail(session.user.email);
+//         await ensureUserTable(session.user.email);
+//       } else if (event === 'SIGNED_OUT') {
+//         navigate('/login');
+//       }
+//     });
+
+//     return () => {
+//       authListener.subscription.unsubscribe();
+//     };
+//   }, [navigate]);
+
+//   useEffect(() => {
+//     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+//   }, [chatHistory]);
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (sidebarRef.current && !sidebarRef.current.contains(event.target) && !event.target.classList.contains('chat-toggle-button')) {
+//         setIsChatSidebarOpen(false);
+//       }
+//     };
+
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => {
+//       document.removeEventListener('mousedown', handleClickOutside);
+//     };
+//   }, []);
+
+//   const handleQueryChange = (e) => {
+//     setQuery(e.target.value);
+//   };
+
+//   const handleSendQuery = async () => {
+//     if (!query || !userEmail) return;
+
+//     setIsLoading(true);
+//     const newQuery = { type: 'query', content: query };
+//     setChatHistory(prev => [...prev, newQuery]);
+
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/query`, {
+//         user_email: userEmail,
+//         query: query,
+//         chat_id: currentChatId
+//       });
+
+//       const newResponse = { type: 'response', content: res.data.response };
+//       setChatHistory(prev => [...prev, newResponse]);
+//       setCurrentChatId(res.data.chat_id);
+//     } catch (error) {
+//       console.error('Error processing request:', error);
+//       const errorMessage = 'Error processing request: ' + error.message;
+//       const errorResponse = { type: 'response', content: errorMessage };
+//       setChatHistory(prev => [...prev, errorResponse]);
+//     } finally {
+//       setIsLoading(false);
+//       setQuery('');
+//     }
+//   };
+
+//   const toggleChatSidebar = () => {
+//     setIsChatSidebarOpen(!isChatSidebarOpen);
+//   };
+
+//   const handleNewChat = async () => {
+//     if (!userEmail) return;
+//     try {
+//       const res = await axios.post(`${API_BASE_URL}/new_chat`, {
+//         user_email: userEmail,
+//       });
+//       setCurrentChatId(res.data.chat_id);
+//       setQuery('');
+//       setChatHistory([]);
+//       navigate('/home');
+//     } catch (error) {
+//       console.error('Error creating new chat:', error);
+//     }
+//   };
+
+//   const handleFileUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (!file || !userEmail) return;
+//     let new_chat_id;
+//     if (!currentChatId) {
+//       new_chat_id = await handleNewChat();
+//     }
+
+//     setIsLoading(true);
+
+//     const formData = new FormData();
+//     formData.append('user_email', userEmail);
+//     formData.append('chat_id', currentChatId ?? new_chat_id);
+//     formData.append('file', file);
+
+//     try {
+//       const response = await axios.post(`${API_BASE_URL}/upload_file`, formData);
+
+//       setUploadedFile(response.data.file_name);
+//       console.log('File uploaded:', response.data.file_name);
+//       const uploadResponse = { type: 'response', content: response.data.message };
+//       setChatHistory(prev => [...prev, uploadResponse]);
+//     } catch (error) {
+//       console.error('Error uploading file:', error);
+//       const errorResponse = { type: 'response', content: `Error uploading file: ${error.message}` };
+//       setChatHistory(prev => [...prev, errorResponse]);
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleLogout = async () => {
+//     await supabase.auth.signOut();
+//     navigate('/');
+//   };
+
+//   if (!userEmail) {
+//     return <div>Loading...</div>;
+//   }
+
+//   return (
+//     <div className="legal-lens-page">
+//       <main className="main-content">
+//         <button className="chat-toggle-button" onClick={toggleChatSidebar}>
+//           ☰
+//         </button>
+
+//         <button onClick={handleLogout} className="logout-button">Logout</button>
+
+//         <div className={`chat-sidebar ${isChatSidebarOpen ? 'open' : ''}`} ref={sidebarRef}>
+//           <div className="chat-sidebar-header">
+//             <button className="close-sidebar" onClick={toggleChatSidebar}>×</button>
+//           </div>
+//           <div className="chat-sidebar-content">
+//             <button className="new-chat-button" onClick={handleNewChat}>New Chat</button>
+//             {/* You can add chat history items here if needed */}
+//           </div>
+//         </div>
+
+//         <div className="chat-container">
+//           {chatHistory.length === 0 ? (
+//             <>
+//               <div className="icon-section">
+//                 <img
+//                   ref={logoItem}
+//                   src={logo}
+//                   alt="Legal Lens Icon"
+//                   className="legal-lens-icon"
+//                 />
+//               </div>
+//               <h1 ref={logoText} className="heading">
+//                 Legal Lens
+//               </h1>
+//               <p ref={logoTag} className="tagline">
+//                 Decoding Legal Jargon
+//               </p>
+//               <div className="action-buttons">
+//                 <button className="action-button" onClick={() => setQuery("Summarize my contract")}>Summarize my contract</button>
+//                 <button className="action-button" onClick={() => setQuery("Identify key clauses")}>Key clause identification</button>
+//                 <button className="action-button" onClick={() => setQuery("Analyze legal documents")}>Analyze legal documents</button>
+//               </div>
+//             </>
+//           ) : (
+//             chatHistory.map((item, index) => (
+//               <div key={index} className={`chat-item ${item.type}`}>
+//                 {item.type === 'query' ? (
+//                   <p><strong>Query:</strong> {item.content}</p>
+//                 ) : (
+//                   <ReactMarkdown>{item.content}</ReactMarkdown>
+//                 )}
+//               </div>
+//             ))
+//           )}
+//           {isLoading && <div className="loading-indicator">Loading...</div>}
+//           <div ref={chatEndRef} />
+//         </div>
+
+//         <div className="query-section">
+//           <Uploadbutton fileHandler={handleFileUpload} />
+//           <input
+//             type="text"
+//             placeholder="Ask me your queries..."
+//             className="query-input"
+//             value={query}
+//             onChange={handleQueryChange}
+//             onKeyDown={(e) => e.key === 'Enter' && handleSendQuery()}
+//           />
+//           <button onClick={handleSendQuery} className="send-button">Send</button>
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default LegalLensPage;
+
+
+
+
+
+
+
+
 import React, { useRef, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -10,43 +900,32 @@ import supabase from '../supabaseClient';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
-
 const LegalLensPage = () => {
   const [query, setQuery] = useState('');
-  const [response, setResponse] = useState('');
-  const [displayedQuery, setDisplayedQuery] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasQueried, setHasQueried] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [allChats, setAllChats] = useState([]);
 
   const navigate = useNavigate();
+  const chatEndRef = useRef(null);
+  const sidebarRef = useRef(null);
 
   const logoItem = useRef(null);
   const logoText = useRef(null);
   const logoTag = useRef(null);
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const ensureUserTable = async (email) => {
-    try {
-      // This endpoint will create the table if it doesn't exist
-      await axios.post(`${API_BASE_URL}/new_chat`, { user_email: email });
-      console.log(`Ensured table exists for user: ${email}`);
-    } catch (error) {
-      console.error('Error ensuring user table exists:', error);
-    }
-  };
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email);
-        await ensureUserTable(user.email);
+        fetchAllChats(user.email);
       } else {
-        navigate('/login'); // Redirect to login page if user is not authenticated
+        navigate('/login');
       }
     };
 
@@ -76,21 +955,55 @@ const LegalLensPage = () => {
       delay: 0.6,
     });
 
-    // Set up Supabase auth listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
         setUserEmail(session.user.email);
-        await ensureUserTable(session.user.email);
+        fetchAllChats(session.user.email);
       } else if (event === 'SIGNED_OUT') {
         navigate('/login');
       }
     });
 
-    // Cleanup function
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target) && !event.target.classList.contains('chat-toggle-button')) {
+        setIsChatSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const fetchAllChats = async (email) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/all_chats?user_email=${email}`);
+      setAllChats(response.data.chats);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+    }
+  };
+
+  const fetchChatHistory = async (chatId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/chat_history?user_email=${userEmail}&chat_id=${chatId}`);
+      setChatHistory(response.data.history.data);
+      setCurrentChatId(chatId);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    }
+  };
 
   const handleQueryChange = (e) => {
     setQuery(e.target.value);
@@ -100,9 +1013,8 @@ const LegalLensPage = () => {
     if (!query || !userEmail) return;
 
     setIsLoading(true);
-    setResponse('');
-    setDisplayedQuery(query);
-    setHasQueried(true);
+    const newQuery = { type: 'query', content: query };
+    setChatHistory(prev => [...prev, newQuery]);
 
     try {
       const res = await axios.post(`${API_BASE_URL}/query`, {
@@ -111,24 +1023,19 @@ const LegalLensPage = () => {
         chat_id: currentChatId
       });
 
-      setResponse(res.data.response);
+      const newResponse = { type: 'response', content: res.data.response };
+      setChatHistory(prev => [...prev, newResponse]);
       setCurrentChatId(res.data.chat_id);
-
-      // Update history
-      setHistory(prevHistory => [{ query, response: res.data.response }, ...prevHistory]);
+      fetchAllChats(userEmail);
     } catch (error) {
       console.error('Error processing request:', error);
       const errorMessage = 'Error processing request: ' + error.message;
-      setResponse(errorMessage);
-      setHistory(prevHistory => [{ query, response: errorMessage }, ...prevHistory]);
+      const errorResponse = { type: 'response', content: errorMessage };
+      setChatHistory(prev => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
       setQuery('');
     }
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
   };
 
   const toggleChatSidebar = () => {
@@ -136,75 +1043,50 @@ const LegalLensPage = () => {
   };
 
   const handleNewChat = async () => {
-
     if (!userEmail) return;
-    let chat_id
     try {
       const res = await axios.post(`${API_BASE_URL}/new_chat`, {
         user_email: userEmail,
       });
-      // console.log(res.data.chat_id)
-      chat_id=res.data.chat_id
       setCurrentChatId(res.data.chat_id);
       setQuery('');
-      setResponse('');
-      setDisplayedQuery('');
-      setHasQueried(false);
-      setHistory([]);
-      navigate('/home')
+      setChatHistory([]);
+      fetchAllChats(userEmail);
     } catch (error) {
       console.error('Error creating new chat:', error);
     }
-    return(chat_id)
-    
   };
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file || !userEmail) return;
-    let new_chat_id;
+    let new_chat_id = currentChatId;
     if (!currentChatId) {
-      new_chat_id=await handleNewChat();
+      const newChatResponse = await handleNewChat();
+      new_chat_id = newChatResponse.chat_id;
     }
 
     setIsLoading(true);
 
     const formData = new FormData();
     formData.append('user_email', userEmail);
-    formData.append('chat_id', currentChatId??new_chat_id);
-    formData.append('file',file);
+    formData.append('chat_id', new_chat_id);
+    formData.append('file', file);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload_file`, formData, {
-        
-      });
+      const response = await axios.post(`${API_BASE_URL}/upload_file`, formData);
 
       setUploadedFile(response.data.file_name);
       console.log('File uploaded:', response.data.file_name);
-      setResponse(response.data.message);
-      setHasQueried(true);
+      const uploadResponse = { type: 'response', content: response.data.message };
+      setChatHistory(prev => [...prev, uploadResponse]);
+      fetchAllChats(userEmail);
     } catch (error) {
       console.error('Error uploading file:', error);
-      setResponse(`Error uploading file: ${error.message}`);
-      setHasQueried(true);
+      const errorResponse = { type: 'response', content: `Error uploading file: ${error.message}` };
+      setChatHistory(prev => [...prev, errorResponse]);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchChatHistory = async (chatId) => {
-    if (!userEmail) return;
-
-    try {
-      const res = await axios.get(`${API_BASE_URL}/chat_history`, {
-        params: {
-          user_email: userEmail,
-          chat_id: chatId,
-        },
-      });
-      setHistory(res.data.history);
-    } catch (error) {
-      console.error('Error fetching chat history:', error);
     }
   };
 
@@ -226,91 +1108,64 @@ const LegalLensPage = () => {
 
         <button onClick={handleLogout} className="logout-button">Logout</button>
 
-        {isChatSidebarOpen && (
-          <div className="chat-sidebar">
-            <div className="chat-sidebar-header">
-              <button className="close-sidebar" onClick={toggleChatSidebar}>×</button>
-            </div>
-            <div className="chat-sidebar-content">
-              <button className="new-chat-button" onClick={handleNewChat}>New Chat</button>
-              {history.map((chat, index) => (
-                <div key={index} className="chat-item" onClick={() => fetchChatHistory(chat.chat_id)}>
-                  {chat.chat_name}
-                </div>
-              ))}
-            </div>
+        <div className={`chat-sidebar ${isChatSidebarOpen ? 'open' : ''}`} ref={sidebarRef}>
+          <div className="chat-sidebar-header">
+            <button className="close-sidebar" onClick={toggleChatSidebar}>×</button>
           </div>
-        )}
-
-        {history.length > 0 && (
-          <button className="toggle-sidebar" onClick={toggleSidebar}>
-            {isSidebarOpen ? 'Hide History' : 'Show History'}
-          </button>
-        )}
-
-        {isSidebarOpen && (
-          <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            <div className="sidebar-header">
-            </div>
-            <div className="history-list">
-              {/* {history.map((item, index) => (
-                <div key={index} className="history-item">
-                  <strong>Query:</strong> {item.query}
-                  <br />
-                  <strong>Response:</strong> {item.response}
-                </div>
-              ))} */}
-            </div>
-          </div>
-        )}
-
-        {hasQueried && (
-          <div className="response-section">
-            {isLoading ? (
-              <div className="loading-indicator">Loading...</div>
-            ) : (
-              <div>
-                <h3>Query:</h3>
-                <p>{displayedQuery}</p>
-                <h3>Response:</h3>
-                <ReactMarkdown>{response}</ReactMarkdown>
+          <div className="chat-sidebar-content">
+            <button className="new-chat-button" onClick={handleNewChat}>New Chat</button>
+            {allChats.map((chat) => (
+              <div
+                key={chat.chat_id}
+                className={`chat-history-item ${currentChatId === chat.chat_id ? 'active' : ''}`}
+                onClick={() => fetchChatHistory(chat.chat_id)}
+              >
+                {chat.chat_name}
               </div>
-            )}
+            ))}
           </div>
-        )}
+        </div>
 
-        {!hasQueried && (
-          <>
-          <div className="icon-section">
-            <img
-              ref={logoItem}
-              src={logo}
-              alt="Legal Lens Icon"
-              className="legal-lens-icon"
-            />
-          </div>
-          <h1 ref={logoText} className="heading">
-            Legal Lens
-          </h1>
-          <p ref={logoTag} className="tagline">
-            Decoding Legal Jargon
-          </p>
-            <div className="action-buttons">
-              <button className="action-button" onClick={() => setQuery("Summarize my contract")}>Summarize my contract</button>
-              <button className="action-button" onClick={() => setQuery("Identify key clauses")}>Key clause identification</button>
-              <button className="action-button" onClick={() => setQuery("Analyze legal documents")}>Analyze legal documents</button>
-            </div>
-            
-          </>
-        )}
+        <div className="chat-container">
+          {chatHistory.length === 0 ? (
+            <>
+              <div className="icon-section">
+                <img
+                  ref={logoItem}
+                  src={logo}
+                  alt="Legal Lens Icon"
+                  className="legal-lens-icon"
+                />
+              </div>
+              <h1 ref={logoText} className="heading">
+                Legal Lens
+              </h1>
+              <p ref={logoTag} className="tagline">
+                Decoding Legal Jargon
+              </p>
+              <div className="action-buttons">
+                <button className="action-button" onClick={() => setQuery("Summarize my contract")}>Summarize my contract</button>
+                <button className="action-button" onClick={() => setQuery("Identify key clauses")}>Key clause identification</button>
+                <button className="action-button" onClick={() => setQuery("Analyze legal documents")}>Analyze legal documents</button>
+              </div>
+            </>
+          ) : (
+            chatHistory.map((item, index) => (
+              <div key={index} className={`chat-item ${item.type}`}>
+                {item.type === 'query' ? (
+                  <p><strong>Query:</strong> {item.content}</p>
+                ) : (
+                  <ReactMarkdown>{item.content}</ReactMarkdown>
+                )}
+              </div>
+            ))
+          )}
+          {isLoading && <div className="loading-indicator">Loading...</div>}
+          <div ref={chatEndRef} />
+        </div>
 
         <div className="query-section">
           <Uploadbutton fileHandler={handleFileUpload} />
-          {/* {
-            <div className="uploaded-file">
-              <p>Uploaded: {uploadedFile}</p>
-            </div>
-          } */}
           <input
             type="text"
             placeholder="Ask me your queries..."
